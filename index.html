@@ -136,7 +136,7 @@ html,body{touch-action:none;overscroll-behavior:none;-webkit-tap-highlight-color
 #tGas.down{background:rgba(60,220,100,.7)}#tBrake.down{background:rgba(255,60,60,.7)}
 #tBtns{position:absolute;right:max(3vw,env(safe-area-inset-right));bottom:39vh;display:flex;gap:2vw}
 .tb.sm{width:10vh;height:10vh;font-size:2.8vh}
-#tTop{position:absolute;top:12px;left:calc(50% + 140px);display:flex;gap:10px}
+#tTop{position:absolute;left:max(3vw,env(safe-area-inset-left));bottom:calc(20vh + 14px);display:flex;gap:10px}
 .tb.xs{width:8vh;height:8vh;font-size:3vh;border-radius:12px}
 #tSlider{position:absolute;left:0;bottom:0;width:42vw;height:62vh;pointer-events:auto;touch-action:none;display:none}
 #tSlider i{position:absolute;bottom:8vh;left:50%;width:6px;height:10vh;margin-left:-3px;background:rgba(255,255,255,.6);border-radius:3px;display:none}
@@ -144,7 +144,7 @@ html,body{touch-action:none;overscroll-behavior:none;-webkit-tap-highlight-color
 #touch.slider #tSlider,#touch.tilt #tSlider{display:block}#touch.slider #tSteer,#touch.tilt #tSteer{display:none}
 #touch.tilt #tSlider{display:none}
 #touch .man{display:none}#touch.manual .man{display:flex}
-#hud.touch #minimap,#hud.touch #gmeter{display:none}
+#hud.touch #minimap,#hud.touch #gmeter{display:none!important}
 #hud.touch #dash{transform:translateX(-50%) scale(.68);transform-origin:50% 100%;bottom:2px}
 #hud.touch #tower .tr:nth-child(n+10):not(.me){display:none}
 #rotate{position:fixed;inset:0;z-index:200;background:#04060a;display:none;align-items:center;justify-content:center;flex-direction:column;gap:18px;font-family:'Exo 2';font-weight:900;font-style:italic;font-size:26px;text-align:center;padding:30px}
@@ -621,7 +621,8 @@ function makeMaterials(){
   MAT.asphalt=new THREE.MeshStandardMaterial({map:TX.asphalt,roughness:0.92,metalness:0});
   MAT.runoff=new THREE.MeshStandardMaterial({map:TX.runoff,roughness:0.95,polygonOffset:true,polygonOffsetFactor:-1});
   MAT.gravel=new THREE.MeshStandardMaterial({map:TX.gravel,roughness:1,polygonOffset:true,polygonOffsetFactor:-2});
-  MAT.grass=new THREE.MeshStandardMaterial({map:TX.grass,roughness:1});
+  // grass is pushed back in depth so the track never loses to it on low-precision (mobile/software) depth buffers
+  MAT.grass=new THREE.MeshStandardMaterial({map:TX.grass,roughness:1,polygonOffset:true,polygonOffsetFactor:6,polygonOffsetUnits:6});
   MAT.kerb=new THREE.MeshStandardMaterial({map:TX.kerb,roughness:0.6,polygonOffset:true,polygonOffsetFactor:-3});
   MAT.white=new THREE.MeshStandardMaterial({color:0xf2f2f2,roughness:0.6,polygonOffset:true,polygonOffsetFactor:-3});
   MAT.check=new THREE.MeshStandardMaterial({map:TX.check,roughness:0.6,polygonOffset:true,polygonOffsetFactor:-4});
@@ -1681,7 +1682,8 @@ function updateCamera(dt){
     pos.x+=jx;pos.y+=jy;camera.position.copy(pos);
     const yw=c.heading+yawOff;camera.lookAt(pos.x+Math.sin(yw)*30,cfg[1]+cfg[2],pos.z+Math.cos(yw)*30);
     if(!back){const roll=camMode==='helmet'?clamp(-c.ayS*0.004,-0.07,0.07):clamp(-c.ayS*0.0012,-0.02,0.02);camera.rotateZ(roll);}}
-  camera.fov=lerp(camera.fov,fov,camMode==='tv'?0.3:0.1);camera.updateProjectionMatrix();
+  camera.fov=lerp(camera.fov,fov,camMode==='tv'?0.3:0.1);
+  camera.near=['cockpit','helmet','nose','wing','tcam'].includes(camMode)?0.08:0.4;camera.updateProjectionMatrix();
   $('hud').classList.toggle('fp',(camMode==='cockpit'||camMode==='helmet')&&!Input.lookBack);
   // sun follows
   sun.position.set(c.x+sunDir.x*200,sunDir.y*200,c.z+sunDir.z*200);sun.target.position.set(c.x,0,c.z);
@@ -1903,9 +1905,11 @@ async function boot(){
   showMenuCars();updatePadInd();hudApply();
   $('loading').style.display='none';state='splash';showScreen('splash');
   requestAnimationFrame(frame);
+  // offline / installable when hosted over https (GitHub Pages); skipped inside the Android app and for local files
+  if('serviceWorker' in navigator&&location.protocol==='https:'&&location.hostname!=='appassets.androidplatform.net')navigator.serviceWorker.register('sw.js').catch(()=>{});
   window.__appBack=()=>{if(state==='race')openPause();else if(state!=='splash')menuAction('back');};
   window.__appPause=()=>{if(state==='race')openPause();};
-  window.__game={get TR(){return TR;},get cars(){return cars;},get race(){return race;},S,startRace,step(n,dt=1/60){for(let i=0;i<n&&state==='race';i++){pollInput(dt);updateRace(dt);}updateCarVisuals(0);updateCamera(1);updateRacingLine();renderer.render(scene,camera);updateHUD(0.016);},setCam(m){camMode=m;},get player(){return player;}};
+  window.__game={get TR(){return TR;},get cars(){return cars;},get race(){return race;},S,startRace,step(n,dt=1/60){for(let i=0;i<n&&state==='race';i++){pollInput(dt);updateRace(dt);}updateCarVisuals(0);updateCamera(1);updateRacingLine();renderer.render(scene,camera);updateHUD(0.016);},setCam(m){camMode=m;},get scene(){return scene;},THREE,get player(){return player;}};
 }
 boot();
 </script>
