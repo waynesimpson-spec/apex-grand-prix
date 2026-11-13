@@ -1,0 +1,8 @@
+# Android build output
+android/build/
+*.apk
+*.idsig
+
+# APK signing key - keep this private and backed up locally, never commit it
+*.keystore
+*.jks
