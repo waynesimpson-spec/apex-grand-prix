@@ -6,7 +6,7 @@
 
 **A 3D motorsport game that runs right in your browser — and on your Android phone.**
 
-Open-wheelers, V8 touring cars and motocross bikes. Six tracks, a full career mode, pit stops, jumps and rain.
+Open-wheelers and V8 touring cars. Four tracks, a full career mode, pit stops, hills and rain.
 
 [![Play in browser](https://img.shields.io/badge/%E2%96%B6%20PLAY%20NOW-in%20your%20browser-ff3b30?style=for-the-badge)](https://waynesimpson-spec.github.io/apex-grand-prix/)
 [![Download APK](https://img.shields.io/badge/ANDROID-Download%20APK-3ddc84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/waynesimpson-spec/apex-grand-prix/releases/latest/download/ApexGP.apk)
@@ -34,11 +34,11 @@ Plug in an **Xbox or PlayStation controller** at any time — it's picked up aut
 
 <table>
   <tr>
-    <td><img src="docs/screenshots/mx.png" alt="Motocross bikes on Red Dust Valley"></td>
+    <td><img src="docs/screenshots/race-golden.png" alt="Racing into a corner at golden hour"></td>
     <td><img src="docs/screenshots/touring-mountain.png" alt="Touring cars on Mount Kestrel"></td>
   </tr>
   <tr>
-    <td align="center"><sub>Motocross World Series at Red Dust Valley</sub></td>
+    <td align="center"><sub>Golden hour at Costa Verde</sub></td>
     <td align="center"><sub>V8 touring cars at Mount Kestrel</sub></td>
   </tr>
   <tr>
@@ -88,9 +88,8 @@ Plug in an **Xbox or PlayStation controller** at any time — it's picked up aut
 |---|---|---|
 | 🏎️ **Apex GP World Championship** | Open-wheel single seaters (DRS, ERS) | Lakeside Park → Costa Verde → Nordhavn Ring → Mount Kestrel |
 | 🚗 **Endurance Touring Series** | 1300 kg V8 touring cars | Costa Verde → Lakeside Park → Nordhavn Ring → **Mountain 1000** finale |
-| 🏍️ **Motocross World Series** | 450cc motocross bikes | Red Dust Valley ⇄ Pine Ridge |
 
-**Six tracks**
+**Four tracks**
 
 | Track | Type | |
 |---|---|---|
@@ -98,8 +97,6 @@ Plug in an **Xbox or PlayStation controller** at any time — it's picked up aut
 | Nordhavn Ring | Grand prix circuit | 3.8 km, technical |
 | **Lakeside Park Circuit** | Park street circuit | 3.6 km, three chicanes, walls close to the track |
 | **Mount Kestrel Raceway** | Mountain circuit | 5.1 km, 147 m of climb, twisty summit and a 1.7 km downhill straight |
-| **Red Dust Valley MX** | Motocross | Dirt, berms, tabletop jumps and whoops |
-| **Pine Ridge MX** | Motocross | Hilly dirt track with three jumps |
 
 **Racing**
 - 🤖 **19 AI rivals** with difficulty from 0 to 110 — they brake, overtake, defend, use DRS/ERS and make their own pit stops
@@ -110,13 +107,13 @@ Plug in an **Xbox or PlayStation controller** at any time — it's picked up aut
 - 🌧️ **Weather** — dry, light rain, heavy rain: spray, wet reflections, fog and much less grip on slicks
 
 **Driving**
-- Car physics with downforce, weight transfer, tyre grip, hills (gravity on climbs and descents) and real airtime off jumps and crests
-- Three vehicle classes with their own handling, gearbox and engine sound: open-wheel (V12-style, 8 gears), touring car (V8, 6 gears) and motocross bike (single-cylinder, 5 gears, leans into corners)
+- Car physics with downforce, weight transfer, tyre grip, and hills (gravity on climbs and descents, getting light over crests)
+- Two vehicle classes with their own handling, gearbox and engine sound: open-wheel (V12-style, 8 gears) and touring car (cross-plane V8 burble, 6 gears)
 - Full assists like the big racing games: stability control, steering, braking, ABS, traction control, racing line, DRS and ERS
 - **9 cameras** — T-Cam, cockpit, helmet, nose, rear wing, third person, far chase, helicopter and TV broadcast, plus free look
 
 **World**
-- Six original tracks, from grand prix circuits to a park street circuit, a mountain circuit and two motocross tracks
+- Four original tracks: two grand prix circuits, a park street circuit with chicanes and a mountain circuit
 - Grandstands with flags, team garages and paddock, TV camera towers, a live timing big screen, bridge, floodlights, marshal posts, distance boards, rubbered-in racing line and skid marks
 - Detailed cars: wings with working DRS flap, halo, steering wheel, glowing brake discs, team liveries and race numbers
 - V12-style engine audio and synthwave menu music
