@@ -2216,7 +2216,8 @@ function setVoice(v,rpm,thr,vol){const t=AU.ctx.currentTime;const f=rpm/60*PHYS.
   v.out.gain.setTargetAtTime(vol,t,0.05);}
 // a crowd cheer: swells up, holds, fades; with a few whistles on top
 let crowdNear=0,lastPlayerPos=0;
-function cheer(level=1,dur=2.5){if(!audioReady||!AU.cheer)return;const c=AU.ctx,t=c.currentTime,g=AU.cheer.g.gain;
+function cheer(level=1,dur=2.5){return; /* crowd cheers removed (the recording is full of air horns) */
+  if(!audioReady||!AU.cheer)return;const c=AU.ctx,t=c.currentTime,g=AU.cheer.g.gain;
   if(REC.crowd){const s=c.createBufferSource();s.buffer=REC.crowd;const gg=c.createGain();const v=level*(0.3+0.4*Math.min(1,crowdNear+0.35)),hold=Math.min(dur,4.2);
     gg.gain.setValueAtTime(0.0001,t);gg.gain.exponentialRampToValueAtTime(v,t+0.25);gg.gain.setValueAtTime(v,t+hold);gg.gain.exponentialRampToValueAtTime(0.0001,t+hold+0.6);s.connect(gg);gg.connect(AU.sfxBus);s.start(t,0,4.9);return;}const v=level*(0.1+0.16*Math.min(1,crowdNear+0.35));
   g.cancelScheduledValues(t);g.setTargetAtTime(v,t,0.18);g.setTargetAtTime(v*0.75,t+0.6,0.5);g.setTargetAtTime(0,t+dur,0.9);AU.cheer.lfo.frequency.setValueAtTime(6+Math.random()*4,t);
@@ -2230,13 +2231,17 @@ function mkRec(bus){const c=AU.ctx;const v={rec:true,next:0};v.lp=c.createBiquad
   // deep but still high: extra body down low, a dip in the whiny upper mids
   v.lo=c.createBiquadFilter();v.lo.type='lowshelf';v.lo.frequency.value=320;v.lo.gain.value=7;v.dip=c.createBiquadFilter();v.dip.type='peaking';v.dip.frequency.value=2600;v.dip.Q.value=0.9;v.dip.gain.value=-6;
   v.out=c.createGain();v.out.gain.value=0;v.lp.connect(v.lo);v.lo.connect(v.dip);v.dip.connect(v.out);v.out.connect(bus);return v;}
+// smooth granular playback: 160 ms grains, three overlapping with soft (Hann) fades, read through the recording in order
+// (continuous, no random jumping) and re-pitched by playback rate; the overlapped fades add up to a steady level
+const REC_WIN=(()=>{const n=64,w=new Float32Array(n);for(let i=0;i<n;i++)w[i]=Math.pow(Math.sin(Math.PI*i/(n-1)),2);return w;})();
 function recTick(v,R,f,thr,vol){const c=AU.ctx,t=c.currentTime;v.out.gain.setTargetAtTime(vol,t,0.04);v.lp.frequency.setTargetAtTime(1800+thr*6200,t,0.05);
-  if(v.next<t)v.next=t+0.01;const G=0.09;
-  while(v.next<t+0.12){let e=R.f0[0],bd=1e9;for(let k=0;k<5;k++){const q=R.f0[(Math.random()*R.f0.length)|0];const d=Math.abs(Math.log(f/q[1]));if(d<bd){bd=d;e=q;}}
-    const rate=Math.min(2.2,Math.max(0.3,f/e[1]));const src=c.createBufferSource();src.buffer=R.buf;src.playbackRate.value=rate;const g=c.createGain();const t0=v.next;
-    g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(1,t0+G/2);g.gain.linearRampToValueAtTime(0,t0+G);
-    src.connect(g);g.connect(v.lp);const off=Math.max(0,Math.min(R.buf.duration-G*rate-0.01,e[0]-G*rate/2));src.start(t0,off,G*rate+0.005);src.stop(t0+G+0.03);
-    v.next+=G/2;}}
+  const G=0.16,hop=G/3,dur=R.buf.duration;if(v.next<t)v.next=t+0.01;if(v.ptr===undefined)v.ptr=0.3;
+  let f0=0;for(const e of R.f0)f0+=e[1];f0/=R.f0.length;const rate=Math.min(1.6,Math.max(0.45,f/f0));
+  while(v.next<t+0.12){if(v.ptr+G*rate>dur-0.05)v.ptr=0.05+Math.random()*0.3;
+    const src=c.createBufferSource();src.buffer=R.buf;src.playbackRate.value=rate;const g=c.createGain();const t0=v.next;
+    const w=new Float32Array(REC_WIN.length);for(let i=0;i<w.length;i++)w[i]=REC_WIN[i]*0.67;g.gain.setValueAtTime(0,t0);g.gain.setValueCurveAtTime(w,t0,G);
+    src.connect(g);g.connect(v.lp);src.start(t0,v.ptr,G*rate+0.01);src.stop(t0+G+0.02);
+    v.ptr+=hop*rate;v.next+=hop;}}
 // drive a firing-pattern engine voice: pitch from rpm (one engine cycle = two revs), brighter on throttle; dop = Doppler shift for passing cars
 function setEng(v,rpm,thr,vol,dop=1){const t=AU.ctx.currentTime,c=v.c;rpm*=c.rpmMul||1;if(c.tame)rpm*=1-c.tame*Math.pow(Math.min(1,rpm/8000),2);const f=Math.max(5,rpm/120*dop);
   v.o.frequency.setTargetAtTime(f,t,0.02);v.o2.frequency.setTargetAtTime(f*c.det,t,0.02);
@@ -2262,25 +2267,25 @@ function updateAudio(){
   const allV=[AU.eng,AU.ai,AU.mxEng,...AU.mxAi,AU.v8Eng,...AU.v8Ai,AU.i6Eng,...AU.i6Ai,AU.f1Rec,AU.f1RecAi];
   // crowd murmur: louder the closer you are to grandstands and spectators
   {crowdNear=0;const sp=TR&&TR.crowdSpots;if(running&&player&&sp){for(const s of sp){const dx=s[0]-player.x,dz=s[1]-player.z;crowdNear=Math.max(crowdNear,s[2]/(1+(dx*dx+dz*dz)/1600));}}
-   const cv=running&&player?0.012+Math.min(1,crowdNear)*0.1:0;if(AU.crowdLoop){AU.crowd.g.gain.setTargetAtTime(0,t,0.2);AU.crowdLoop.gain.setTargetAtTime(cv*1.8,t,0.4);}else AU.crowd.g.gain.setTargetAtTime(cv,t,0.4);}
+   const cv=0; /* crowd sounds off */if(AU.crowdLoop){AU.crowd.g.gain.setTargetAtTime(0,t,0.2);AU.crowdLoop.gain.setTargetAtTime(cv*1.8,t,0.4);}else AU.crowd.g.gain.setTargetAtTime(cv,t,0.4);}
   if(!running||!player){for(const x of allV)x.out.gain.setTargetAtTime(0,t,0.1);for(const n of [AU.wind,AU.squeal,AU.gravel])n.g.gain.setTargetAtTime(0,t,0.1);AU.rumbleG.gain.setTargetAtTime(0,t,0.05);if(AU.turbo){AU.turbo.g.gain.setTargetAtTime(0,t,0.1);AU.turbo.wg.gain.setTargetAtTime(0,t,0.1);}return;}
   const c=player;const v=c.speed;const cls=VCLASS;
   const mine=cls==='mx'?AU.mxEng:(cls==='touring'?AU.v8Eng:(cls==='street'?AU.i6Eng:(REC.f1?AU.f1Rec:AU.eng)));const aiV=cls==='mx'?AU.mxAi:(cls==='touring'?AU.v8Ai:(cls==='street'?AU.i6Ai:[REC.f1?AU.f1RecAi:AU.ai]));
   for(const x of allV)if(x!==mine&&!aiV.includes(x))x.out.gain.setTargetAtTime(0,t,0.08);
   // each class has its own engine; every car is tuned slightly differently (car.voice)
-  const engine=(vv,car,r,vol,dop=1)=>{r*=car.voice||1;if(cls==='f1'){if(vv.rec)recTick(vv,REC.f1,r/19.5*dop,car.throttle,vol*3.2);else setEng(vv,r,car.throttle,vol,dop);}
+  const engine=(vv,car,r,vol,dop=1)=>{r*=car.voice||1;if(cls==='f1'){if(vv.rec)recTick(vv,REC.f1,642*(0.52+0.66*clamp((r-PHYS.idle)/(PHYS.redline-PHYS.idle),0,1.1))*dop,car.throttle,vol*5.5);else setEng(vv,r,car.throttle,vol,dop);}
     else if(cls==='touring'||cls==='street')setEng(vv,r,car.throttle,vol*1.1,dop);
     else setVoiceP(vv,r/120,car.throttle,vol*1.2,260+car.throttle*1900+r*0.09,0.02);};
   let rpm=c.rpmD;if(c.limiter)rpm-=Math.random()*(cls==='mx'?900:350);
   let vol=(cls!=='f1'?0.15:0.13)+c.throttle*0.21; // loud and aggressive, opens right up on throttle
   if(c.gear!==lastGear){const up=c.gear>lastGear;mine.out.gain.cancelScheduledValues(t);
     if(up){mine.out.gain.setValueAtTime(vol*0.3,t);mine.out.gain.linearRampToValueAtTime(vol*1.15,t+0.06);}
-    else{mine.out.gain.setValueAtTime(vol*1.2,t);blipT=0.09;const n=2+Math.floor(Math.random()*2);for(let k=0;k<n;k++)pop(t+0.03+k*0.07,(cls==='touring'?0.09:0.065)+Math.random()*0.03);}
+    else{mine.out.gain.setValueAtTime(vol,t);} /* downshift: no pops */
     lastGear=c.gear;}
   if(blipT>0){blipT-=1/60;rpm+=PHYS.redline*0.14*Math.max(0,blipT/0.09);}
   engine(mine,c,rpm,vol);
   // overrun pops / crackles when lifting off at high revs (V8s crackle most)
-  popCool-=1/60;if(lastThr>0.7&&c.throttle<0.15&&rpm>PHYS.redline*0.7&&popCool<=0){const n=3+Math.floor(Math.random()*(cls==='f1'?4:7));for(let k=0;k<n;k++)pop(t+0.03+k*(0.04+Math.random()*0.07),(cls==='touring'?0.08:0.05)+Math.random()*0.05);popCool=cls==='mx'?0.35:0.45;}
+  popCool-=1/60;if(false&&lastThr>0.7&&c.throttle<0.15&&rpm>PHYS.redline*0.7&&popCool<=0){ /* lift-off pops removed (sounded like clicks) */const n=3+Math.floor(Math.random()*(cls==='f1'?4:7));for(let k=0;k<n;k++)pop(t+0.03+k*(0.04+Math.random()*0.07),(cls==='touring'?0.08:0.05)+Math.random()*0.05);popCool=cls==='mx'?0.35:0.45;}
   // turbo (touring V8): boost spools up with revs and throttle, whistles, and blows off when you lift
   // V8s: just the engine, no supercharger whine or turbo hiss
   if(AU.turbo){AU.turbo.g.gain.setTargetAtTime(0,t,0.1);AU.turbo.wg.gain.setTargetAtTime(0,t,0.1);}
@@ -2292,7 +2297,7 @@ function updateAudio(){
   aiV.forEach((vv,k)=>{const e=near[k];if(e){const o=e[0];let dop=1;if(o._pt!=null&&t-o._pt<0.1){const dd=(e[1]-o._pd)/Math.max(0.005,t-o._pt);dop=clamp(343/(343+dd),0.86,1.16);}o._pd=e[1];o._pt=t;let ar=o.rpmD;if(race&&!race.started){const ph=t*(3+(o.idx%5)*0.4)+o.idx;ar=PHYS.idle+(PHYS.redline-PHYS.idle)*(0.3+0.35*Math.max(0,Math.sin(ph))*Math.max(0,Math.sin(ph*0.37)));}engine(vv,(race&&!race.started)?{voice:o.voice,throttle:0.8}:o,ar,(cls==='f1'?0.29:0.34)/(1+e[1]/7),dop);}else vv.out.gain.setTargetAtTime(0,t,0.1);});
   const dirtT=!!(TR&&TR.def.dirt);
   AU.wind.g.gain.setTargetAtTime(Math.min(0.045,v*v/90000),t,0.15);AU.wind.f.frequency.setTargetAtTime(250+v*6,t,0.15);
-  AU.squeal.g.gain.setTargetAtTime(!dirtT&&c.surfMu>0.9&&c.slide>0.6?clamp((c.slide-0.6)*0.12,0,0.1)*Math.min(1,v/12):0,t,0.08);
+  AU.squeal.g.gain.setTargetAtTime(0,t,0.08); /* tyre squeal removed (sounded like a horn) */
   AU.gravel.g.gain.setTargetAtTime(dirtT?Math.min(0.2,(c.slide*0.1+c.spin*0.25)*Math.min(1,v/8)+v/500):(c.surfMu<0.9&&!c.onKerb?Math.min(0.22,v/80):0),t,0.08);
   AU.rumbleG.gain.setTargetAtTime(c.onKerb?Math.min(0.22,v/60):0,t,0.03);AU.rumbleO.frequency.setTargetAtTime(20+v*0.6,t,0.05);
 }

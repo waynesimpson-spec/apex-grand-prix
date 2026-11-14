@@ -125,7 +125,7 @@ Plug in an **Xbox or PlayStation controller** at any time — it's picked up aut
 - Grandstands with flags, team garages and paddock, TV camera towers, a live timing big screen, bridge, floodlights, marshal posts, distance boards, rubbered-in racing line and skid marks
 - Detailed cars: wings with working DRS flap, halo, steering wheel, glowing brake discs, team liveries and race numbers
 - Early-morning light with height fog and sun shafts through the pine forests
-- Five menu songs to pick from (synthwave, hard rock, drum & bass, eurobeat, phonk) and a real crowd at the start and finish
+- Five menu songs to pick from (synthwave, hard rock, drum & bass, eurobeat, phonk)
 
 ## 🎮 Controls
 
