@@ -613,11 +613,14 @@ function computeProfile(t){
   t.vp=vp;
 }
 function makeTerrain(t){const cell=40,grid=new Map();for(let i=0;i<t.N;i+=2){const k=Math.floor(t.px[i]/cell)+','+Math.floor(t.pz[i]/cell);let l=grid.get(k);if(!l)grid.set(k,l=[]);l.push(i);}
-  return(x,z)=>{const cx=Math.floor(x/cell),cz=Math.floor(z/cell);let best=1e18,bh=0,ws=0,wh=0,lowNear=1e9;
-    for(const R of [4,12]){for(let a=-R;a<=R;a++)for(let b=-R;b<=R;b++){const l=grid.get((cx+a)+','+(cz+b));if(!l)continue;for(const i of l){const dx=x-t.px[i],dz=z-t.pz[i],d2=dx*dx+dz*dz;if(d2<best){best=d2;bh=t.py[i];}if(d2<2025&&t.py[i]<lowNear)lowNear=t.py[i];const w=1/(d2+900);ws+=w;wh+=w*t.py[i];}}if(best<1e18)break;}
-    if(best===1e18)return t.minH-1;const d=Math.sqrt(best);const h=lerp(bh,wh/ws,smooth((d-25)/80))-0.4;
-    // hard rule: ground within 45 m of the road is never above the road, so hillsides can never poke through the track
-    return Math.min(h,lowNear-0.5);};}
+  return(x,z)=>{const cx=Math.floor(x/cell),cz=Math.floor(z/cell);let best=1e18,bh=0,ws=0,wh=0,bi=0;
+    for(const R of [4,12]){for(let a=-R;a<=R;a++)for(let b=-R;b<=R;b++){const l=grid.get((cx+a)+','+(cz+b));if(!l)continue;for(const i of l){const dx=x-t.px[i],dz=z-t.pz[i],d2=dx*dx+dz*dz;if(d2<best){best=d2;bh=t.py[i];bi=i;}const w=1/(d2+900);ws+=w;wh+=w*t.py[i];}}if(best<1e18)break;}
+    if(best===1e18)return t.minH-1;const d=Math.sqrt(best);// a flat grass shelf level with the road out past the barriers, then a smooth blend into the hills
+    // exact road height at this spot: nearest point plus the slope along the track
+    {const N=t.N,ip=(bi+1)%N,im=(bi-1+N)%N;bh+=((x-t.px[bi])*t.tx[bi]+(z-t.pz[bi])*t.tz[bi])*(t.py[ip]-t.py[im])/(2*t.sp);}
+    if(d<22)return bh-0.25;
+    // (with the fine ground grid, only shelf vertices can span the road, so hills never cover it and the road never floats)
+    return lerp(bh,wh/ws,smooth((d-22)/90))-0.25;};}
 function bankRaise(t,i,off){return Math.max(0,-off*t.bk[i]);}
 function bankY(i,off){const t=TR;if(!t||!t.hasBank||i<0)return 0;const hw=t.halfW;if(Math.abs(off)<=hw)return lerp(bankRaise(t,i,-hw),bankRaise(t,i,hw),(off+hw)/(2*hw));return bankRaise(t,i,off);}
 function heightAt(s){const t=TR;if(!t||!t.hasH)return 0;s=((s%t.L)+t.L)%t.L;const f=s/t.sp;const i=Math.floor(f)%t.N;return lerp(t.py[i],t.py[(i+1)%t.N],f-Math.floor(f));}
