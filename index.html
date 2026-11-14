@@ -314,12 +314,14 @@ const DEFAULTS={
 };
 const isTouch=(window.matchMedia&&matchMedia('(pointer:coarse)').matches)||('ontouchstart' in window);
 Object.assign(DEFAULTS,{touch:'auto',touchSteer:'buttons',tiltSens:100});
-if(isTouch)Object.assign(DEFAULTS,{quality:'medium',resScale:85,shadows:'medium',aiCount:11,hudScale:85,steerAssist:true});
+if(isTouch)Object.assign(DEFAULTS,{aiCount:11,hudScale:85,steerAssist:true}); // phones get the same full graphics as desktop (Auto Resolution keeps it smooth)
 if(isTouch)document.body.classList.add('touchdev');
 const SKEY='apexgp_settings_v1';
 let S=Object.assign({},DEFAULTS);
 try{const j=JSON.parse(localStorage.getItem(SKEY)||'{}');Object.assign(S,j);}catch(e){}
 if(S.vclass!=='f1'&&S.vclass!=='touring')S.vclass='f1';
+// v1.3: phones previously defaulted to reduced graphics; lift saved phone settings to full quality once
+if(!S.gfx13){if(isTouch&&(S.quality==='medium'||S.quality==='low')){S.quality='high';S.shadows='high';S.resScale=100;}S.gfx13=true;try{localStorage.setItem(SKEY,JSON.stringify(S));}catch(e){}}
 function saveS(){try{localStorage.setItem(SKEY,JSON.stringify(S));}catch(e){}}
 
 const ON_OFF=[[false,'Off'],[true,'On']];
