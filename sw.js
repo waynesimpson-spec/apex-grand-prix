@@ -1,7 +1,7 @@
 // Apex Grand Prix service worker: makes the hosted game installable and playable offline after the first visit.
-const CACHE = 'apexgp-v1';
+const CACHE = 'apexgp-v2';
 const CORE = [
-  './', './index.html', './manifest.json', './icon-192.png', './icon-512.png',
+  './', './index.html', './sounds.js', './manifest.json', './icon-192.png', './icon-512.png',
   'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js',
   'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/utils/BufferGeometryUtils.js'
 ];
